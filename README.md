@@ -79,7 +79,20 @@ Please follow the existing test-first pattern and run `pytest` before submitting
 
 MIT
 
-## Project Links
+## Relationship to driftcheck
 
-- Repository: https://github.com/yunaremaia/prompt-drift
-- Issues: https://github.com/yunaremaia/prompt-drift/issues
+[prompt-drift](https://github.com/yunaremaia/prompt-drift) é um complemento ao [driftcheck](https://github.com/yunaremaia/driftcheck):
+
+| driftcheck | prompt-drift |
+|------------|--------------|
+| Drift de toolchain/config (Dockerfile vs README, rust-toolchain vs CI, etc.) | Drift entre prompts de LLM e seus testes de avaliação |
+| 61+ detectores em 14+ ecossistemas | Focado: correspodência prompt/eval |
+| Modo `--fix` para correção automática | Modo de revisão manual (prompts são semânticos, não auto-corrigíveis) |
+| Exit 1 em qualquer drift | Exit 1 em findings de drift |
+
+Ambos seguem a mesma filosofia: detectar drift entre o que algo _diz_ e o que algo _é_ — seja um README e um Dockerfile, ou um prompt de sistema e seu suite de testes.
+
+## Badges
+
+![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)
+![Tests](https://img.shields.io/badge/tests-TBD-green?logo=pytest)

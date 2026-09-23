@@ -32,6 +32,10 @@ Thumbs.db
 *.log
 logs/
 
-# Prompts and evals (may contain sensitive data)
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
 prompts/local/
 evals/local/

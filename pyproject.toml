@@ -1,0 +1,36 @@
+[project]
+name = "prompt-drift"
+version = "0.1.0"
+description = "Detect drift between LLM prompts and their evaluation tests — when prompts change but evals don't"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "Yunare Maia", email = "yunare@gmail.com"}]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Quality Assurance",
+  "Topic :: Software Development :: Testing",
+  "Topic :: Artificial Intelligence",
+]
+
+dependencies = [
+  "click>=8.0",
+  "rich>=13.0",
+]
+
+[project.scripts]
+prompt-drift = "prompt_drift.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/prompt_drift"]
