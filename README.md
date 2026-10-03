@@ -24,25 +24,41 @@ Existing evals frameworks (`promptfoo`, `evals`, `langsmith`) *run* tests — th
 | Stale evals | Test cases that no longer match prompt's stated behavior |
 | Behavioral shift | Prompt tone/structure change not reflected in rubrics |
 
-### Usage
+## Install
+
+Not published on PyPI yet, so install it straight from the repository:
 
 ```bash
-# Scan a project for prompt-eval drift
-prompt-drift scan
+pip install git+https://github.com/yunaremaia/prompt-drift.git
+```
+
+Or from source:
+
+```bash
+git clone https://github.com/yunaremaia/prompt-drift.git
+cd prompt-drift
+pip install -e .
+```
+
+### Usage
+
+The path to scan is a positional argument; there is no `scan` subcommand.
+
+```bash
+# Scan a project for prompt-eval drift (defaults to the current directory)
+prompt-drift ./my-project
+
+# JSON output for CI
+prompt-drift ./my-project --json
 
 # Define prompt-eval relationships in config
 # (in pyproject.toml or .prompt-drift.toml)
 [tool.prompt-drift]
 prompts = ["prompts/"]
 evals = ["evals/", "tests/prompts/"]
-
-# Run with config
-prompt-drift scan --config .prompt-drift.toml
-
-# Output formats
-prompt-drift scan --format json   # CI-friendly
-prompt-drift scan --format sarif  # GitHub Code Scanning integration
 ```
+
+SARIF output is on the [roadmap](#roadmap), not implemented yet.
 
 ### Exit Codes
 
@@ -52,10 +68,10 @@ prompt-drift scan --format sarif  # GitHub Code Scanning integration
 
 ## Stack
 
-- **Language:** Python 3.11+
+- **Language:** Python 3.10+
 - **Parser:** AST-based prompt extraction, YAML/JSON eval parsing
 - **Config:** `pyproject.toml` (PEP 621) or standalone `.prompt-drift.toml`
-- **Output:** Terminal, JSON, SARIF
+- **Output:** Terminal, JSON (SARIF planned)
 - **Tests:** `pytest`
 
 ## Roadmap
@@ -94,5 +110,5 @@ Ambos seguem a mesma filosofia: detectar drift entre o que algo _diz_ e o que al
 
 ## Badges
 
-![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-TBD-green?logo=pytest)
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
+![CI](https://github.com/yunaremaia/prompt-drift/actions/workflows/python-tests.yml/badge.svg)](https://github.com/yunaremaia/prompt-drift/actions/workflows/python-tests.yml)
