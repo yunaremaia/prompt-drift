@@ -24,6 +24,11 @@ dependencies = [
   "rich>=13.0",
 ]
 
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.0",
+]
+
 [project.scripts]
 prompt-drift = "prompt_drift.cli:main"
 
@@ -33,3 +38,6 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/prompt_drift"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
