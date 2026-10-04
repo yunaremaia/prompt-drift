@@ -7,10 +7,13 @@ import click
 from rich.console import Console
 from rich.table import Table
 
-from prompt_drift.scanner import scan_directory, collect_prompts, collect_evals
+from prompt_drift.scanner import collect_prompts, collect_evals
 from prompt_drift.detectors import detect_drift, DriftReport
 
+# Human-readable output (rich) goes here. `main` builds a stderr-backed console
+# when `--json` is passed so that stdout carries the JSON document alone.
 console = Console()
+error_console = Console(stderr=True)
 
 
 @click.command()
@@ -20,18 +23,28 @@ console = Console()
 def main(path: str, output_json: bool, no_progress: bool):
     """Detect drift between LLM prompts and their evaluation tests.
 
-    Exemplus:
+    The path to scan is a positional argument. `--json` writes the report to
+    stdout and nothing else, so it can be piped into `jq`; progress and
+    human-readable output are routed to stderr.
+
+    Exemplos:
         prompt-drift ./my-project
         prompt-drift ./my-project --json
     """
     root = Path(path).resolve()
-    console.print(f"[bold]Scanning[/bold] [cyan]{root}[/cyan]")
+
+    # `--json` promises stdout is the document and only the document. rich
+    # writes to stdout by default, so every human-readable line has to move to
+    # stderr before anything is printed — `--no-progress` alone cannot do it,
+    # because the "Scanning" line is not progress output.
+    human = error_console if output_json else console
+    human.print(f"[bold]Scanning[/bold] [cyan]{root}[/cyan]")
 
     prompts = collect_prompts(root)
     evals = collect_evals(root)
 
     if not no_progress:
-        console.print(
+        human.print(
             f"  Found [green]{len(prompts)}[/green] prompts, "
             f"[yellow]{len(evals)}[/yellow] evals"
         )

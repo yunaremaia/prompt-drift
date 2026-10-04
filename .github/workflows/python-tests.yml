@@ -35,3 +35,6 @@ jobs:
 
       - name: Run test suite
         run: python -m pytest tests/ -v --tb=short
+
+      - name: Lint (ruff, F rules)
+        run: python -m ruff check .

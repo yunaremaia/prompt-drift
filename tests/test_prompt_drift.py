@@ -1,8 +1,6 @@
 """Testes para prompt-drift."""
 
-import pytest
 from pathlib import Path
-import tempfile
 
 from prompt_drift.scanner import collect_prompts, collect_evals
 from prompt_drift.detectors import detect_drift, DriftReport
@@ -88,15 +86,22 @@ class TestDetectDrift:
         prompts = collect_prompts(tmp_path)
         evals = collect_evals(tmp_path)
         report = detect_drift(prompts, evals, tmp_path)
-        assert report.drift_count > 0
+        assert report.drift_count == 1
+        assert [f.drift_type for f in report.findings] == ["unEval'd_prompt"]
 
     def test_flag_orphan_eval(self, tmp_path: Path):
-        """Eval sem prompt correspondente é flaggeado."""
+        """Eval sem prompt correspondente é flaggeado.
+
+        The old assertion here was ``report.drift_count >= 0``, which cannot
+        fail. This one requires the finding to be counted, not merely present.
+        """
         (tmp_path / "test_eval.py").write_text("def test_eval(): pass")
         evals = collect_evals(tmp_path)
         prompts = collect_prompts(tmp_path)
         report = detect_drift(prompts, evals, tmp_path)
-        assert report.drift_count >= 0
+        assert "orphan_eval" in [f.drift_type for f in report.findings]
+        assert report.drift_count == 1
+        assert report.exit_code == 1
 
     def test_exit_code_on_drift(self, tmp_path: Path):
         """Exit code 1 quando drift é detectado."""
@@ -135,11 +140,25 @@ class TestPromptEvalMatching:
     """Testes para correspondência prompt-eval."""
 
     def test_same_name_match(self, tmp_path: Path):
-        """Arquivos com mesmo nome base são considerados relacionados."""
+        """Arquivos com mesmo nome base são considerados relacionados.
+
+        The old assertion here was
+        ``len(report.findings) > 0 or report.drift_count >= 0``, whose second
+        branch is always true, so the test could never fail — and the fixture
+        it used did not even produce a pair: ``system_eval.py`` is not
+        collected as an eval (the scanner looks for ``def test_``, not
+        ``def test``), so there was nothing to match against.
+
+        This asserts what the docstring claims: a matched pair produces no
+        orphan finding and keeps the gate green.
+        """
         (tmp_path / "system.prompt").write_text("Test.")
-        (tmp_path / "system_eval.py").write_text("def test(): pass")
+        (tmp_path / "system.eval").write_text('{"test": "value"}')
         prompts = collect_prompts(tmp_path)
         evals = collect_evals(tmp_path)
         report = detect_drift(prompts, evals, tmp_path)
-        # system.prompt e system_eval.py têm nomes similares
-        assert len(report.findings) > 0 or report.drift_count >= 0
+        # system.prompt e system.eval têm o mesmo nome base
+        assert len(prompts) == 1 and len(evals) == 1
+        orphan_types = {"orphan_eval", "orphan_prompt", "unEval'd_prompt"}
+        assert not orphan_types & {f.drift_type for f in report.findings}
+        assert report.exit_code == 0
