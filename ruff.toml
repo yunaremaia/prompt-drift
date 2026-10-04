@@ -1,0 +1,15 @@
+# Lint gate for pyflakes-class errors (F rules).
+#
+# Two of the four bugs fixed in 0.1.1 were invisible to the suite and easy to
+# miss in review: an unused local (`F841`) and an unused import (`F401`). The
+# rule set is pinned rather than left to ruff's defaults so this gate cannot
+# start failing — or silently stop checking — on a ruff release.
+#
+# `select = ["F"]` must live under `[lint]` at the top level. `[lint.flake8]`
+# is not a section: ruff exits 2 with a TOML parse error, which fails the job
+# on the config instead of on the code.
+
+target-version = "py310"
+
+[lint]
+select = ["F"]

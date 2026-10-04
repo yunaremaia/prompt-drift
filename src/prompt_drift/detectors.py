@@ -6,6 +6,10 @@ from typing import Optional
 
 from prompt_drift.scanner import PromptFile, EvalFile
 
+# Finding type that is reported but does not fail the gate. See the comment on
+# the `drift_count` computation in `detect_drift` for the rationale.
+ADVISORY_FINDING_TYPE = "potential_drift"
+
 
 @dataclass
 class DriftFinding:
@@ -41,6 +45,10 @@ def detect_drift(prompts: list[PromptFile], evals: list[EvalFile],
     1. Um prompt existe sem avaliação correspondente
     2. Uma avaliação existe sem prompt correspondente
     3. Prompt e avaliação coexistem mas há indicação de desatualização
+
+    Todos os findings entram em `report.findings` e, exceto o advisory
+    `ADVISORY_FINDING_TYPE`, contribuem para `drift_count` — que é o que
+    determina `exit_code`.
     """
     if root is None:
         root = Path.cwd()
@@ -52,9 +60,6 @@ def detect_drift(prompts: list[PromptFile], evals: list[EvalFile],
 
     if not prompts and not evals:
         return report
-
-    prompt_names = {p.name for p in prompts}
-    eval_names = {e.name for e in evals}
 
     # Prompts sem avaliação correspondente
     for prompt in prompts:
@@ -82,7 +87,6 @@ def detect_drift(prompts: list[PromptFile], evals: list[EvalFile],
                     severity="high",
                     detail=f"Prompt {prompt.name} has no corresponding evaluation/test",
                 ))
-                report.drift_count += 1
 
     # Avaliações sem prompt correspondente
     for eval_f in evals:
@@ -119,18 +123,45 @@ def detect_drift(prompts: list[PromptFile], evals: list[EvalFile],
                     report.findings.append(DriftFinding(
                         prompt_path=prompt.path,
                         eval_path=eval_f.path,
-                        drift_type="potential_drift",
+                        drift_type=ADVISORY_FINDING_TYPE,
                         severity="medium",
                         detail=f"Prompt/Eval pair {prompt.name}/{eval_f.name} — verify they are in sync",
                     ))
 
-    report.drift_count = len([f for f in report.findings
-                              if f.drift_type in ("unEval'd_prompt", "potential_drift")])
+    # `potential_drift` is advisory and excluded from the exit code.
+    #
+    # Every matched pair produced this finding, and it counted toward
+    # `drift_count`, so a correctly paired project exited 1 forever. There is
+    # no signal available today that separates a genuinely drifted pair from
+    # a correctly paired one — semantic comparison is a roadmap item, not
+    # implemented — so counting this finding means the gate is always red. An
+    # always-red gate gets ignored or disabled, which destroys the one signal
+    # that does work. The finding is still emitted: it is real information for
+    # a human reviewer, it just no longer decides the exit code.
+    #
+    # Every other finding type counts, including the low-severity orphans.
+    # Counting by severity threshold instead would be the same fail-open class
+    # as the allowlist this replaces: `orphan_eval` is severity "low", and a
+    # report holding findings must never print "No drift detected".
+    report.drift_count = sum(
+        1 for f in report.findings if f.drift_type != ADVISORY_FINDING_TYPE
+    )
     return report
 
 
 def _prompt_eval_match(prompt_path: Path, eval_path: Path) -> bool:
-    """Verifica se um prompt e uma avaliação estão relacionados."""
+    """Verifica se um prompt e uma avaliação estão relacionados.
+
+    Matching is by file stem only, which covers the convention this tool
+    targets: ``prompts/summarizer.prompt`` pairs with
+    ``evals/test_summarizer.py`` because ``'summarizer' in 'test_summarizer'``.
+
+    Directory layout deliberately plays no part. An earlier version also
+    matched on a shared parent directory, but ``Path.parents`` walks up to
+    ``/``, whose ``.name`` is ``''`` — so the two name sets always intersected
+    and every prompt matched every eval. That made the coverage-gap finding
+    unreachable: a prompt with no eval at all was reported as evaluated.
+    """
     p_stem = prompt_path.stem
     e_stem = eval_path.stem
 
@@ -138,12 +169,6 @@ def _prompt_eval_match(prompt_path: Path, eval_path: Path) -> bool:
     if p_stem == e_stem:
         return True
     if p_stem in e_stem or e_stem in p_stem:
-        return True
-
-    # Conteúdo de diretório similar (ambos em prompts/ e evals/)
-    p_parents = {p.name for p in prompt_path.parents}
-    e_parents = {e.name for e in eval_path.parents}
-    if p_parents & e_parents:
         return True
 
     return False
