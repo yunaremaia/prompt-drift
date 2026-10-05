@@ -17,12 +17,19 @@ Existing evals frameworks (`promptfoo`, `evals`, `langsmith`) *run* tests — th
 
 `prompt-drift` analyzes the relationship between prompts and their evaluation files to detect:
 
-| Check | What it catches |
-|-------|----------------|
-| Intent drift | Prompt behavior changed but eval criteria untouched |
-| Coverage gap | New prompt capabilities with no corresponding eval |
-| Stale evals | Test cases that no longer match prompt's stated behavior |
-| Behavioral shift | Prompt tone/structure change not reflected in rubrics |
+Detection is structural: prompts and evals are paired by filename stem
+(`prompts/summarizer.prompt` ↔ `evals/test_summarizer.py`) and the pairing is
+reported when it is broken.
+
+| Finding | Severity | What it catches |
+|---------|----------|----------------|
+| `unEval'd_prompt` | high | Coverage gap — a prompt nothing evaluates |
+| `orphan_eval` | low | An eval with no prompt, or possibly stale against a similarly named one |
+| `orphan_prompt` | medium | A prompt whose eval may target outdated content |
+| `potential_drift` | medium | Advisory only — a matched pair to verify by hand; does not fail CI |
+
+Intent drift, stale evals and behavioral shift need semantic comparison of the
+prompt against its eval, which is not implemented — see [Roadmap](#roadmap).
 
 ## Install
 
@@ -48,42 +55,44 @@ The path to scan is a positional argument; there is no `scan` subcommand.
 # Scan a project for prompt-eval drift (defaults to the current directory)
 prompt-drift ./my-project
 
-# JSON output for CI
+# JSON output for CI — stdout carries only the JSON document
 prompt-drift ./my-project --json
 
-# Define prompt-eval relationships in config
-# (in pyproject.toml or .prompt-drift.toml)
-[tool.prompt-drift]
-prompts = ["prompts/"]
-evals = ["evals/", "tests/prompts/"]
+# Suppress the "Found N prompts, M evals" line
+prompt-drift ./my-project --no-progress
 ```
+
+There is no config file. Prompts and evals are discovered by extension and
+directory convention (`.prompt`/`.txt`, plus `# PROMPT` markers in Markdown;
+`test_*.py`, `.eval`, and `eval`/`test` files under `evals/`), so no
+`pyproject.toml` or `.prompt-drift.toml` entry is read today.
 
 SARIF output is on the [roadmap](#roadmap), not implemented yet.
 
 ### Exit Codes
 
-- `0` — no drift detected
+- `0` — no drift detected (`potential_drift` alone still exits `0`)
 - `1` — drift detected (CI fail)
-- `2` — config error
+- `2` — invalid path argument
 
 ## Stack
 
 - **Language:** Python 3.10+
-- **Parser:** AST-based prompt extraction, YAML/JSON eval parsing
-- **Config:** `pyproject.toml` (PEP 621) or standalone `.prompt-drift.toml`
+- **Discovery:** Filename/extension convention — no AST, YAML or JSON parsing
 - **Output:** Terminal, JSON (SARIF planned)
 - **Tests:** `pytest`
 
 ## Roadmap
 
-- [ ] Core scanner: intent/coverage/stale/behavioral checks
-- [ ] Config-driven prompt-eval mapping
+- [x] Core scanner: pair prompts and evals by filename stem, flag broken pairs
+- [x] Terminal and `--json` output with CI exit codes
+- [ ] Config-driven prompt-eval mapping (`[tool.prompt-drift]`)
+- [ ] Semantic comparison: intent drift, stale evals, behavioral shift
 - [ ] SARIF output for GitHub Advanced Security
 - [ ] Auto-suggest new eval cases for changed prompts
 - [ ] Git pre-commit hook integration
 - [ ] Diff mode: compare two prompt versions
-- [ ] LLM-assisted drift detection (semantic similarity)
-- [ ] Multi-format support (`.txt`, `.md`, `.yaml`, `.json` prompts)
+- [ ] Multi-format support (`.yaml`, `.json` prompts)
 
 ## Contributing
 

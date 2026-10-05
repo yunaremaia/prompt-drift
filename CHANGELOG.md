@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [0.1.1]
+## [0.1.1] - 2026-10-05
 
 ### Added
 
@@ -37,6 +37,16 @@ All notable changes to this project will be documented in this file.
   report.drift_count >= 0`) now assert the behaviour they describe.
 - Removed an unused local pair (`prompt_names`, `eval_names`) and an unused
   `scan_directory` import.
+- `prompt_drift.__version__` was left at `0.1.0` while `pyproject.toml`
+  declared `0.1.1`, so `prompt_drift.__version__` disagreed with the installed
+  distribution metadata. It now reads `0.1.1`.
+- `README.md` documented a `[tool.prompt-drift]` block in `pyproject.toml` (or
+  `.prompt-drift.toml`) that no code ever read, claimed AST-based prompt
+  extraction and YAML/JSON eval parsing that does not exist, and listed
+  intent-drift / coverage-gap / stale-eval / behavioral-shift checks under a
+  scanner that only pairs files by filename stem. The README now documents the
+  four findings the tool actually emits and states that config support is not
+  implemented.
 
 ## [0.1.0] - 2026-10-03
 

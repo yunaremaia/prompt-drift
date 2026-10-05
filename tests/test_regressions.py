@@ -250,3 +250,18 @@ class TestJsonOutputIsParseable:
         assert document["exit_code"] == 1
         assert document["drift_count"] >= 1
         assert document["findings"], "the JSON document must carry the findings"
+
+
+class TestVersionMatchesTheDistribution:
+    """`__version__` was `0.1.0` while pyproject declared `0.1.1`.
+
+    Nothing read `__version__`, so the drift shipped green. A release cut from
+    this state would tag v0.1.1 while the package claims to be 0.1.0.
+    """
+
+    def test_dunder_version_matches_installed_metadata(self):
+        from importlib.metadata import version
+
+        import prompt_drift
+
+        assert prompt_drift.__version__ == version("prompt-drift")
