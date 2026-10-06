@@ -76,7 +76,7 @@ def main(path: str, output_json: bool, no_progress: bool):
 
 
 def _print_report(report: DriftReport, root: Path):
-    if report.drift_count == 0:
+    if not report.findings:
         console.print(
             f"\n[bold green]No drift detected[/bold green] in [cyan]{root}[/cyan]"
         )
@@ -86,12 +86,20 @@ def _print_report(report: DriftReport, root: Path):
         )
         return
 
-    console.print(f"\n[bold red]Drift detected[/bold red] in [cyan]{root}[/cyan]")
-    console.print(
-        f"  {report.total_prompts} prompts, "
-        f"{report.total_evals} evals, "
-        f"[red]{report.drift_count} drift(s)[/red]"
-    )
+    advisory = [f for f in report.findings if f.drift_type == "potential_drift"]
+    if report.drift_count == 0:
+        console.print(f"\n[bold yellow]No blocking drift[/bold yellow] in [cyan]{root}[/cyan]")
+        console.print(
+            f"  {report.total_prompts} prompts, {report.total_evals} evals, "
+            f"[yellow]{len(advisory)} advisory finding(s) to review[/yellow]"
+        )
+    else:
+        console.print(f"\n[bold red]Drift detected[/bold red] in [cyan]{root}[/cyan]")
+        console.print(
+            f"  {report.total_prompts} prompts, "
+            f"{report.total_evals} evals, "
+            f"[red]{report.drift_count} drift(s)[/red]"
+        )
 
     table = Table(show_header=True, header_style="bold magenta")
     table.add_column("Type", style="cyan", width=18)

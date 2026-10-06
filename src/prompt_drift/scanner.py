@@ -45,8 +45,16 @@ def _looks_like_prompt_file(path: Path) -> bool:
                     return True
             except OSError:
                 return False
-        if path.suffix in {".prompt", ".txt"}:
+        if path.suffix == ".prompt":
             return True
+        if path.suffix == ".txt":
+            try:
+                content = path.read_text(encoding="utf-8", errors="ignore")
+            except OSError:
+                return False
+            if PROMPT_KEYWORDS.search(content):
+                return True
+            return path.parent.name in {"prompts", "instructions"}
         if path.name.startswith("prompt") or path.name.startswith("system"):
             return True
         if path.parent.name in {"prompts", "instructions"}:

@@ -67,9 +67,8 @@ def detect_drift(prompts: list[PromptFile], evals: list[EvalFile],
                          if _prompt_eval_match(prompt.path, e.path)]
         if not matching_evals:
             # Tentar encontrar por nome similar
-            prompt_base = prompt.path.stem
             similar = [e for e in evals
-                      if prompt_base in e.path.stem or e.path.stem in prompt_base]
+                      if _similar_names(prompt.path, e.path)]
             if similar:
                 for eval_f in similar:
                     report.findings.append(DriftFinding(
@@ -93,9 +92,8 @@ def detect_drift(prompts: list[PromptFile], evals: list[EvalFile],
         matching_prompts = [p for p in prompts
                            if _prompt_eval_match(p.path, eval_f.path)]
         if not matching_prompts:
-            eval_base = eval_f.path.stem
             similar = [p for p in prompts
-                      if eval_base in p.path.stem or p.path.stem in eval_base]
+                      if _similar_names(eval_f.path, p.path)]
             if similar:
                 for prompt in similar:
                     report.findings.append(DriftFinding(

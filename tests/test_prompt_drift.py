@@ -18,7 +18,7 @@ class TestCollectPrompts:
 
     def test_collects_txt_prompt_files(self, tmp_path: Path):
         """Arquivos .txt com conteúdo de prompt são coletados."""
-        (tmp_path / "instruction.txt").write_text("Respond in JSON format.")
+        (tmp_path / "instruction.txt").write_text("prompt: Respond in JSON format.")
         prompts = collect_prompts(tmp_path)
         assert len(prompts) == 1
 
